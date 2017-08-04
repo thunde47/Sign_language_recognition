@@ -109,7 +109,26 @@ class SelectorDIC(ModelSelector):
         warnings.filterwarnings("ignore", category=DeprecationWarning)
 
         # TODO implement model selection based on DIC scores
-        raise NotImplementedError
+        DIC_highest=float("-inf")
+        best_model=None
+        for components in range(self.min_n_components, self.max_n_components+1):
+            try:
+                model = GaussianHMM(n_components=components, n_iter=1000).fit(self.X, self.lengths)
+                self_L=model.score(self.X, self.lengths)
+                others_sum_L=0.0
+                for word in self.words:
+                    if word != self.this_word:
+                        X_other, lengths_other=self.hwords[word]
+                        others_sum_L+=model.score(X_other, lengths_other)
+                DIC=self_L - others_sum_L/(len(self.words)-1)
+                if DIC>DIC_highest:
+                    DIC=DIC_highest
+                    best_model=model
+            except: pass
+        return best_model            
+                
+                        
+        
 
 
 class SelectorCV(ModelSelector):
