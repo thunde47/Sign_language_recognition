@@ -15,7 +15,7 @@ class ModelSelector(object):
 
     def __init__(self, all_word_sequences: dict, all_word_Xlengths: dict, this_word: str,
                  n_constant=3,
-                 min_n_components=2, max_n_components=10,
+                 min_n_components=2, max_n_components=15,
                  random_state=14, verbose=False):
         self.words = all_word_sequences
         self.hwords = all_word_Xlengths
@@ -78,18 +78,22 @@ class SelectorBIC(ModelSelector):
 
         # TODO implement model selection based on BIC scores
         BIC_least=float("inf")
-        best_num_components=0 
+        best_model=None
         for components in range(self.min_n_components, self.max_n_components+1):
-            model = GaussianHMM(n_components=components, n_iter=1000).fit(self.X, self.lengths)
-            n_features = self.X.shape[1]
-            L = model.score(self.X, self.lengths)
-            p = n_features**2 + 2.0 * components * n_features - 1
-            N = len(self.lengths)
-            BIC=-2.0 * L + p * np.log(N)
-            if BIC<=BIC_least:
-                BIC_least=BIC
-                best_num_components=components
-        return self.base_model(best_num_components)                 
+            try:
+                model = GaussianHMM(n_components=components, n_iter=1000).fit(self.X, self.lengths)
+                n_features = self.X.shape[1]
+                L = model.score(self.X, self.lengths)
+                p = components*components + 2.0 * components * n_features - 1
+                N = len(self.lengths)
+            
+                BIC=-2.0 * L + p * np.log(N)
+                if BIC<BIC_least:
+                    BIC_least=BIC
+                    best_model=model
+            except: pass        
+               
+        return best_model                
 
 
 class SelectorDIC(ModelSelector):
