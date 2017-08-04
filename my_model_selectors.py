@@ -79,14 +79,15 @@ class SelectorBIC(ModelSelector):
         # TODO implement model selection based on BIC scores
         BIC_least=float("inf")
         best_model=None
+        
         for components in range(self.min_n_components, self.max_n_components+1):
             try:
                 model = GaussianHMM(n_components=components, n_iter=1000).fit(self.X, self.lengths)
-                n_features = self.X.shape[1]
+                n_features = len(self.X[0])
                 L = model.score(self.X, self.lengths)
                 p = components*components + 2.0 * components * n_features - 1
-                N = len(self.lengths)
-            
+                N = len(self.X[:,0])
+                
                 BIC=-2.0 * L + p * np.log(N)
                 if BIC<BIC_least:
                     BIC_least=BIC
