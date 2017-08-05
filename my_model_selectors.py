@@ -137,10 +137,10 @@ class SelectorCV(ModelSelector):
         L_best=float("-inf")
         best_model=None
         n_splits=3
-        if len(self.sequences)<n_splits:
-            n_splits=len(self.sequences)
+        if len(self.sequences)==1:
+            return self.base_model(self.n_constant)
+        else: n_splits=min(len(self.sequences), n_splits) 
         split_method = KFold(n_splits=n_splits)        
-
         for components in range(self.min_n_components, self.max_n_components+1):
             sum_L=0.0
             try:
@@ -155,4 +155,4 @@ class SelectorCV(ModelSelector):
                     L_best=sum_L
                     best_model=model    
             except: pass        
-        return best_model 
+        return best_model
