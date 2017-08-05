@@ -6,7 +6,7 @@ import numpy as np
 from hmmlearn.hmm import GaussianHMM
 from sklearn.model_selection import KFold
 from asl_utils import combine_sequences
-
+from sklearn.model_selection import KFold
 
 class ModelSelector(object):
     '''
@@ -93,7 +93,6 @@ class SelectorBIC(ModelSelector):
                     BIC_least=BIC
                     best_model=model
             except: pass        
-               
         return best_model                
 
 
@@ -109,7 +108,7 @@ class SelectorDIC(ModelSelector):
     def select(self):
         warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-        # TODO implement model selection based on DIC scores
+        
         DIC_highest=float("-inf")
         best_model=None
         for components in range(self.min_n_components, self.max_n_components+1):
@@ -123,15 +122,11 @@ class SelectorDIC(ModelSelector):
                         others_sum_L+=model.score(X_other, lengths_other)
                 DIC=self_L - others_sum_L/(len(self.words)-1)
                 if DIC>DIC_highest:
-                    DIC=DIC_highest
+                    DIC_highest=DIC
                     best_model=model
             except: pass
-        return best_model            
-                
+        return best_model    
                         
-        
-
-
 class SelectorCV(ModelSelector):
     ''' select best model based on average log Likelihood of cross-validation folds
 
@@ -139,6 +134,25 @@ class SelectorCV(ModelSelector):
 
     def select(self):
         warnings.filterwarnings("ignore", category=DeprecationWarning)
+        L_best=float("-inf")
+        best_model=None
+        n_splits=3
+        if len(self.sequences)<n_splits:
+            n_splits=len(self.sequences)
+        split_method = KFold(n_splits=n_splits)        
 
-        # TODO implement model selection using CV
-        raise NotImplementedError
+        for components in range(self.min_n_components, self.max_n_components+1):
+            sum_L=0.0
+            try:
+                for cv_train_idx, cv_test_idx in split_method.split(self.sequences):
+                    X_train, lengths_train=combine_sequences(cv_train_idx, self.sequences)
+                    X_test, lengths_test=combine_sequences(cv_test_idx, self.sequences)
+            
+                    model = GaussianHMM(n_components=components, n_iter=1000).fit(X_train, lengths_train)
+                    test_L=model.score(X_test, lengths_test)
+                    sum_L+=test_L
+                if sum_L>L_best:
+                    L_best=sum_L
+                    best_model=model    
+            except: pass        
+        return best_model 
